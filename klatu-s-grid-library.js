@@ -1,3 +1,32 @@
+class KGLHeap {
+  constructor(comparer) {
+    this.heap = [null];
+    this.comparer = comparer;
+  }
+
+  insert(x) {
+    for (var position = this.heap.length; 1 < position && this.comparer(x, this.heap[Math.floor(position / 2)]) < 0; position = Math.floor(position / 2))
+      this.heap[position] = this.heap[Math.floor(position / 2)];
+    this.heap[position] = x;
+  }
+
+  removeMin() {
+    if (this.heap.length === 1) return null;
+    var min = this.heap[1];
+    var lastIndex = this.heap.length - 1;
+    var temp = this.heap[1] = this.heap[lastIndex];
+    for (var i = 1; 2 * i <= lastIndex; i = child) {
+      var child = 2 * i;
+      if (child != lastIndex && 0 < this.comparer(this.heap[child], this.heap[child + 1])) child++;
+      if (0 < this.comparer(temp, this.heap[child])) this.heap[i] = this.heap[child];
+      else break;
+    }
+    this.heap[i] = temp;
+    this.heap.pop();
+    return min;
+  }
+}
+
 class KGLGrid {
   constructor(container, width, height, tileSides) {
     if (container instanceof HTMLElement) {
@@ -32,7 +61,7 @@ class KGLGrid {
           if (x) {
             currentTile.linkWith(this.tiles[x - 1][y]);
           }
-          if (y && (this.tileSides != 3 || (x % 2 == 1) && (y % 2 == 0) || (y % 2 == 1) && (x % 2 == 0))) {
+          if (y && ((this.tileSides != 3) || (x % 2 != y % 2))) {
             currentTile.linkWith(this.tiles[x][y - 1])
           }
           if (this.tileSides === 6) {
