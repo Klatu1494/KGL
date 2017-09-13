@@ -7,27 +7,44 @@ class KGLGrid {
       if (tileSides != 3 && tileSides != 6) tileSides = 4;
       this.terrainCanvas = document.createElement("canvas");
       this.unitCanvas = document.createElement("canvas");
-      this.terrainCanvas.width = unitCanvas.width = width;
-      this.terrainCanvas.height = unitCanvas.height = height;
+      this.terrainCanvas.width = this.unitCanvas.width = width;
+      this.terrainCanvas.height = this.unitCanvas.height = height;
       this.tileSides = tileSides;
     } else throw new Error("container should be an HTMLElement.");
   }
 
   setGrid(terrainArray, unitsArray) {
-    if (array instanceof Array && array.length) {
-      var min = array[0].length;
-      var length = array.length;
+    if (terrainArray instanceof Array && terrainArray.length) {
+      var min = terrainArray[0].length;
+      var length = terrainArray.length;
       for (var i = 1; i < length; i++) {
-        array[i].filter(a => a instanceof KGLTileType);
-        min = Math.min(min, array[i].length);
+        terrainArray[i].filter(a => a instanceof KGLTileType);
+        min = Math.min(min, terrainArray[i].length);
       }
       this.width = min;
       this.height = length;
       this.tiles = [];
-      for (x = 0; x < min; x++) {
-        this.grid[x] = [];
+      for (var x = 0; x < min; x++) {
+        this.tiles[x] = [];
         for (var y = 0; y < length; y++) {
-          this.grid[x][y] = new KGLTile(x, y, terrainArray[y][x]);
+          var currentTile = new KGLTile(x, y, terrainArray[y][x]);
+          this.tiles[x][y] = currentTile;
+          if (x) {
+            currentTile.linkWith(this.tiles[x - 1][y]);
+          }
+          if (y && (this.tileSides != 3 || x % 2)) {
+            currentTile.linkWith(this.tiles[x][y - 1])
+          }
+          if (this.tileSides === 6) {
+            if (x) {
+              if (x % 2 && y) {
+                currentTile.linkWith(this.tiles[x - 1][y - 1]);
+              }
+              if (x % 2 == 0 && y < this.width - 1) {
+                currentTile.linkWith(this.tiles[x - 1][y + 1])
+              }
+            }
+          }
         }
       }
       for (var unit of unitsArray) {
@@ -42,44 +59,7 @@ class KGLGrid {
   }
 
   move(unit, tile) {
-    for (var row of this.tiles)
-      for (var tile of row) {
-        tile.minCost = null;
-        tile.parent = null;
-        tile.f = null;
-      }
-    var currentTile = this.tiles[unit.position.x][unit.position.y];
-    var adyacentTile;
-    var openTiles = [currentTile];
-    var closedTiles = [];
-    currentTile.f = 0;
-    while (openTiles.length) {
-      openTiles.sort((a, b) => b.f - a.f);
-      currentTile = openTiles.pop();
-      if (currentTile.x) {
-        adyacentTile = this.tiles[currentTile.x - 1][currentTile.y];
-        adyacentTile.parent = currentTile;
-        openTiles.push(currentTile);
-      }
-      if (currentTile.x < this.width - 1) {
-        adyacentTile = this.tiles[currentTile.x + 1][currentTile.y];
-        adyacentTile.parent = currentTile;
-        openTiles.push(currentTile);
-      }
-      if (this.tileSides == 6) {
-        var displacement = currentTile.x % 2 ? 1 : -1;
-        if (currentTile.x) {
-          adyacentTile = this.tiles[currentTile.x - 1][currentTile.y + displacement];
-          adyacentTile.parent = currentTile;
-          openTiles.push(currentTile);
-        }
-        if (currentTile.x < this.width - 1) {
-          adyacentTile = this.tiles[currentTile.x + 1][currentTile.y + displacement];
-          adyacentTile.parent = currentTile;
-          openTiles.push(currentTile);
-        }
-      }
-    }
+
   }
 }
 
@@ -94,7 +74,13 @@ class KGLTile {
   constructor(x, y, type) {
     this.type = type;
     this.unit = null;
+    this.adyacentTiles = new Set();
     this.x = x;
     this.y = y;
+  }
+
+  linkWith(tile) {
+    this.adyacentTiles.add(tile);
+    tile.adyacentTiles.add(this);
   }
 }
